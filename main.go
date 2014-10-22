@@ -44,7 +44,8 @@ func autoFileName(p string) string {
 
 func main() {
 	// 保存名称
-	saveName := flag.String("s", "", "Save name")
+	saveName := flag.String("n", "", "Save name")
+	saveDir := flag.String("d", "", "Save dirname")
 	autoName := flag.Bool("a", false, "Auto named saved files")
 	flag.Parse()
 	files := flag.Args()
@@ -71,6 +72,9 @@ func main() {
 	for _, file := range files {
 		if *autoName {
 			key = autoFileName(file)
+		}
+		if *saveDir != "" {
+			key = path.Join(*saveDir, key)
 		}
 		ret, err := uploadFile(file, key, uptoken)
 		if err != nil {

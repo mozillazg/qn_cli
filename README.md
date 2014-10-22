@@ -15,11 +15,12 @@ $ export QINIU_BUCKET_URL="<QINIU_BUCKET_URL>"
 $ export QINIU_ACCESS_KEY="<QINIU_ACCESS_KEY>"
 $ export QINIU_SECRET_KEY="<QINIU_SECRET_KEY>"
 
-$ ./qn_cli -s test/README2.md README.md
-http://tmp-images.qiniudn.com/test/README2.md
+$ ./qn_cli -n test/124.txt 1234.txt
+Upload file 1234.txt successed: http://tmp-images.qiniudn.com/test/124.txt
 
 $ ./qn_cli --help
 Usage of ./qn_cli:
   -a=false: Auto named saved files
-  -s="--save": save name
+  -d="": Save dirname
+  -n="": Save name
 ```
