@@ -5,10 +5,15 @@ $ qn_cli --help
 package main
 
 import (
+	"crypto/md5"
+	"encoding/hex"
 	"flag"
 	"fmt"
 	"os"
 	"path"
+	"path/filepath"
+	"strconv"
+	"time"
 
 	"github.com/qiniu/api/conf"
 	"github.com/qiniu/api/resumable/io"
@@ -37,16 +42,27 @@ func uploadFile(localFile, key, uptoken string) (ret io.PutRet, err error) {
 	return
 }
 
+// 自动生成文件名
 func autoFileName(p string) string {
 	_, name := path.Split(p)
 	return name
+}
+func autoMD5FileName(p string) string {
+	oldName := autoFileName(p)
+	now := int(time.Now().Nanosecond())
+	hash := md5.Sum([]byte(
+		strconv.Itoa(now),
+	))
+	newName := hex.EncodeToString(hash[:]) + "_" + oldName
+	return newName
 }
 
 func main() {
 	// 保存名称
 	saveName := flag.String("n", "", "Save name")
 	saveDir := flag.String("d", "", "Save dirname")
-	autoName := flag.Bool("a", false, "Auto named saved files")
+	autoName := flag.Bool("a", true, "Auto named saved files")
+	autoMD5Name := flag.Bool("m", false, "Auto named saved files use MD5 value")
 	flag.Parse()
 	files := flag.Args()
 
@@ -55,8 +71,16 @@ func main() {
 	accessKey := os.Getenv("QINIU_ACCESS_KEY")
 	secretKey := os.Getenv("QINIU_SECRET_KEY")
 	key := *saveName
+	fileSlice := []string{}
 
-	if len(files) == 0 {
+	// 支持通配符
+	for _, file := range files {
+		matches, err := filepath.Glob(file)
+		if err == nil {
+			fileSlice = append(fileSlice, matches...)
+		}
+	}
+	if len(fileSlice) == 0 {
 		flag.PrintDefaults()
 		fmt.Println("need files: qn_cli FILE [FILE ...]")
 		return
@@ -69,9 +93,12 @@ func main() {
 	uptoken := genToken(bucketName)
 
 	// 上传文件
-	for _, file := range files {
-		if *autoName {
+	for _, file := range fileSlice {
+		if *autoName && key == "" {
 			key = autoFileName(file)
+		}
+		if *autoMD5Name && key == "" {
+			key = autoMD5FileName(file)
 		}
 		if *saveDir != "" {
 			key = path.Join(*saveDir, key)
