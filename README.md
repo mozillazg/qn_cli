@@ -20,5 +20,6 @@ http://tmp-images.qiniudn.com/test/README2.md
 
 $ ./qn_cli --help
 Usage of ./qn_cli:
+  -a=false: Auto named saved files
   -s="--save": save name
 ```

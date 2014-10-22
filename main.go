@@ -8,6 +8,7 @@ import (
 	"flag"
 	"fmt"
 	"os"
+	"path"
 
 	"github.com/qiniu/api/conf"
 	"github.com/qiniu/api/resumable/io"
@@ -32,19 +33,19 @@ func uploadFile(localFile, key, uptoken string) (ret io.PutRet, err error) {
 	} else {
 		err = io.PutFile(nil, &ret, uptoken, key, localFile, extra)
 	}
-	if err != nil {
-		fmt.Println("Upload file failed:", err)
-		return
-	}
 
 	return
 }
 
+func autoFileName(p string) string {
+	_, name := path.Split(p)
+	return name
+}
+
 func main() {
-	// 文件路径
-	// file := flag.String("f", "", "local file")
 	// 保存名称
-	saveName := flag.String("s", "", "save name")
+	saveName := flag.String("s", "", "Save name")
+	autoName := flag.Bool("a", false, "Auto named saved files")
 	flag.Parse()
 	files := flag.Args()
 
@@ -66,12 +67,16 @@ func main() {
 	// 生成上传 token
 	uptoken := genToken(bucketName)
 
+	// 上传文件
 	for _, file := range files {
+		if *autoName {
+			key = autoFileName(file)
+		}
 		ret, err := uploadFile(file, key, uptoken)
 		if err != nil {
-			fmt.Println(err)
+			fmt.Printf("Upload file %s faied: %s\n", file, err)
 		} else {
-			fmt.Println(bucketURL + ret.Key)
+			fmt.Printf("Upload file %s successed: %s\n", file, bucketURL+ret.Key)
 		}
 	}
 }
