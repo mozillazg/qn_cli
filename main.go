@@ -27,7 +27,11 @@ func genToken(bucket string) string {
 func uploadFile(localFile, key, uptoken string) (ret io.PutRet, err error) {
 	var extra = &io.PutExtra{}
 
-	err = io.PutFile(nil, &ret, uptoken, key, localFile, extra)
+	if key == "" {
+		err = io.PutFileWithoutKey(nil, &ret, uptoken, localFile, extra)
+	} else {
+		err = io.PutFile(nil, &ret, uptoken, key, localFile, extra)
+	}
 	if err != nil {
 		fmt.Println("Upload file failed:", err)
 		return
@@ -38,10 +42,11 @@ func uploadFile(localFile, key, uptoken string) (ret io.PutRet, err error) {
 
 func main() {
 	// 文件路径
-	file := flag.String("f", "--file", "local file")
+	// file := flag.String("f", "", "local file")
 	// 保存名称
-	saveName := flag.String("s", "--save", "save name")
+	saveName := flag.String("s", "", "save name")
 	flag.Parse()
+	files := flag.Args()
 
 	bucketName := os.Getenv("QINIU_BUCKET_NAME")
 	bucketURL := os.Getenv("QINIU_BUCKET_URL")
@@ -49,9 +54,9 @@ func main() {
 	secretKey := os.Getenv("QINIU_SECRET_KEY")
 	key := *saveName
 
-	if *file == "" {
+	if len(files) == 0 {
 		flag.PrintDefaults()
-		fmt.Println("need file: -f or --file")
+		fmt.Println("need files: qn_cli FILE [FILE ...]")
 		return
 	}
 
@@ -61,10 +66,12 @@ func main() {
 	// 生成上传 token
 	uptoken := genToken(bucketName)
 
-	ret, err := uploadFile(*file, key, uptoken)
-	if err != nil {
-		fmt.Println(err)
-	} else {
-		fmt.Println(bucketURL + ret.Key)
+	for _, file := range files {
+		ret, err := uploadFile(file, key, uptoken)
+		if err != nil {
+			fmt.Println(err)
+		} else {
+			fmt.Println(bucketURL + ret.Key)
+		}
 	}
 }

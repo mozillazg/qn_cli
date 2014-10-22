@@ -15,11 +15,10 @@ $ export QINIU_BUCKET_URL="<QINIU_BUCKET_URL>"
 $ export QINIU_ACCESS_KEY="<QINIU_ACCESS_KEY>"
 $ export QINIU_SECRET_KEY="<QINIU_SECRET_KEY>"
 
-$ ./qn_cli -f README.md -s test/README2.md
+$ ./qn_cli -s test/README2.md README.md
 http://tmp-images.qiniudn.com/test/README2.md
 
 $ ./qn_cli --help
 Usage of ./qn_cli:
-  -f="--file": local file
   -s="--save": save name
 ```
