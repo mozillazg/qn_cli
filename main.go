@@ -57,7 +57,17 @@ func autoMD5FileName(p string) string {
 	return newName
 }
 
-func main() {
+type args struct {
+	bucketURL   string
+	fileSlice   []string
+	key         string
+	autoName    bool
+	autoMD5Name bool
+	saveDir     string
+	uptoken     string
+}
+
+func parse_args() args {
 	// 保存名称
 	saveName := flag.String("n", "", "Save name")
 	saveDir := flag.String("d", "", "Save dirname")
@@ -83,7 +93,7 @@ func main() {
 	if len(fileSlice) == 0 {
 		flag.PrintDefaults()
 		fmt.Println("need files: qn_cli FILE [FILE ...]")
-		return
+		os.Exit(1)
 	}
 
 	// 配置 accesskey, secretkey
@@ -92,22 +102,39 @@ func main() {
 	// 生成上传 token
 	uptoken := genToken(bucketName)
 
+	return args{
+		bucketURL:   bucketURL,
+		fileSlice:   fileSlice,
+		key:         key,
+		autoName:    *autoName,
+		autoMD5Name: *autoMD5Name,
+		saveDir:     *saveDir,
+		uptoken:     uptoken,
+	}
+}
+
+func main() {
+	a := parse_args()
+
 	// 上传文件
-	for _, file := range fileSlice {
-		if *autoName && key == "" {
-			key = autoFileName(file)
+	for _, file := range a.fileSlice {
+		if a.autoName && a.key == "" {
+			a.key = autoFileName(file)
 		}
-		if *autoMD5Name && key == "" {
-			key = autoMD5FileName(file)
+		if a.autoMD5Name && a.key == "" {
+			a.key = autoMD5FileName(file)
 		}
-		if *saveDir != "" {
-			key = path.Join(*saveDir, key)
+		if a.saveDir != "" {
+			a.key = path.Join(a.saveDir, a.key)
 		}
-		ret, err := uploadFile(file, key, uptoken)
+		ret, err := uploadFile(file, a.key, a.uptoken)
 		if err != nil {
 			fmt.Printf("Upload file %s faied: %s\n", file, err)
 		} else {
-			fmt.Printf("Upload file %s successed: %s\n", file, bucketURL+ret.Key)
+			fmt.Printf("Upload file %s successed: %s\n",
+				file,
+				a.bucketURL+ret.Key,
+			)
 		}
 	}
 }
