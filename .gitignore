@@ -22,5 +22,5 @@ _testmain.go
 *.exe
 *.test
 *.prof
-qn_cli
+# qn_cli
 *.swp

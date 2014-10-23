@@ -21,10 +21,13 @@ import (
 )
 
 // 生成上传 token
-func genToken(bucket string) string {
+func genToken(bucket string, overwrite bool, key string) string {
 	policy := rs.PutPolicy{
 		Scope:      bucket,
 		ReturnBody: `{"bucket": $(bucket),"key": $(key)}`,
+	}
+	if overwrite {
+		policy.Scope = policy.Scope + ":" + key
 	}
 	return policy.Token(nil)
 }
@@ -58,11 +61,13 @@ func autoMD5FileName(p string) string {
 }
 
 type args struct {
+	bucketName  string
 	bucketURL   string
 	fileSlice   []string
 	key         string
 	autoName    bool
 	autoMD5Name bool
+	overwrite   bool
 	saveDir     string
 	uptoken     string
 }
@@ -72,7 +77,8 @@ func parse_args() args {
 	saveName := flag.String("n", "", "Save name")
 	saveDir := flag.String("d", "", "Save dirname")
 	autoName := flag.Bool("a", true, "Auto named saved files")
-	autoMD5Name := flag.Bool("m", false, "Auto named saved files use MD5 value")
+	autoMD5Name := flag.Bool("md5", false, "Auto named saved files use MD5 value")
+	overwrite := flag.Bool("w", false, "Overwrite exists files")
 	flag.Parse()
 	files := flag.Args()
 
@@ -99,34 +105,42 @@ func parse_args() args {
 	// 配置 accesskey, secretkey
 	conf.ACCESS_KEY = accessKey
 	conf.SECRET_KEY = secretKey
-	// 生成上传 token
-	uptoken := genToken(bucketName)
 
 	return args{
+		bucketName:  bucketName,
 		bucketURL:   bucketURL,
 		fileSlice:   fileSlice,
 		key:         key,
 		autoName:    *autoName,
 		autoMD5Name: *autoMD5Name,
+		overwrite:   *overwrite,
 		saveDir:     *saveDir,
-		uptoken:     uptoken,
+		uptoken:     "",
 	}
 }
 
 func main() {
 	a := parse_args()
+	if !a.overwrite {
+		// 生成上传 token
+		a.uptoken = genToken(a.bucketName, a.overwrite, a.key)
+	}
 
 	// 上传文件
 	for _, file := range a.fileSlice {
-		if a.autoName && a.key == "" {
-			a.key = autoFileName(file)
-		}
 		if a.autoMD5Name && a.key == "" {
 			a.key = autoMD5FileName(file)
+		} else if a.autoName && a.key == "" {
+			a.key = autoFileName(file)
 		}
 		if a.saveDir != "" {
 			a.key = path.Join(a.saveDir, a.key)
 		}
+		if a.overwrite {
+			a.uptoken = genToken(a.bucketName, a.overwrite, a.key)
+		}
+
+		// 上传文件
 		ret, err := uploadFile(file, a.key, a.uptoken)
 		if err != nil {
 			fmt.Printf("Upload file %s faied: %s\n", file, err)
