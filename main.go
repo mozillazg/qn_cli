@@ -9,6 +9,8 @@ import (
 	"encoding/hex"
 	"flag"
 	"fmt"
+	"io/ioutil"
+	"log"
 	"os"
 	"path"
 	"path/filepath"
@@ -71,6 +73,7 @@ type args struct {
 	overwrite   bool
 	saveDir     string
 	uptoken     string
+	verbose     bool
 }
 
 func parse_args() args {
@@ -80,8 +83,12 @@ func parse_args() args {
 	autoName := flag.Bool("a", true, "Auto named saved files")
 	autoMD5Name := flag.Bool("md5", false, "Auto named saved files use MD5 value")
 	overwrite := flag.Bool("w", false, "Overwrite exists files")
+	verbose := flag.Bool("v", false, "Verbose mode")
 	flag.Parse()
 	files := flag.Args()
+	if !*verbose {
+		log.SetOutput(ioutil.Discard)
+	}
 
 	bucketName := os.Getenv("QINIU_BUCKET_NAME")
 	bucketURL := os.Getenv("QINIU_BUCKET_URL")
@@ -117,6 +124,7 @@ func parse_args() args {
 		overwrite:   *overwrite,
 		saveDir:     *saveDir,
 		uptoken:     "",
+		verbose:     *verbose,
 	}
 }
 
@@ -154,12 +162,19 @@ func main() {
 			// 上传文件
 			ret, err := uploadFile(file, key, uptoken)
 			if err != nil {
-				fmt.Printf("Upload file %s faied: %s\n", file, err)
+				if a.verbose {
+					fmt.Printf("Upload file %s faied: %s\n", file, err)
+				}
 			} else {
-				fmt.Printf("Upload file %s successed: %s\n",
-					file,
-					a.bucketURL+ret.Key,
-				)
+				url := a.bucketURL + ret.Key
+				if a.verbose {
+					fmt.Printf("Upload file %s successed: %s\n",
+						file,
+						url,
+					)
+				} else {
+					fmt.Println(url)
+				}
 			}
 		}(file)
 	}

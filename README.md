@@ -23,19 +23,13 @@ $ export QINIU_ACCESS_KEY="<QINIU_ACCESS_KEY>"
 $ export QINIU_SECRET_KEY="<QINIU_SECRET_KEY>"
 
 $ ./qn_cli *.txt
-Upload file 1234.txt successed: http://tmp-images.qiniudn.com/1234.txt
-Upload file 2345.txt successed: http://tmp-images.qiniudn.com/2345.txt
+http://tmp-images.qiniudn.com/1234.txt
+http://tmp-images.qiniudn.com/2345.txt
 $ ./qn_cli -n test/124.txt 1234.txt
-Upload file 1234.txt successed: http://tmp-images.qiniudn.com/test/124.txt
-$ ./qn_cli -w -d test *.txt
-Upload file 1234.txt successed: http://tmp-images.qiniudn.com/test/1234.txt
-Upload file 2345.txt successed: http://tmp-images.qiniudn.com/test/2345.txt
-$ ./qn_cli -w *.txt
-Upload file 1234.txt successed: http://tmp-images.qiniudn.com/1234.txt
-Upload file 2345.txt successed: http://tmp-images.qiniudn.com/2345.txt
+http://tmp-images.qiniudn.com/test/124.txt
 $ ./qn_cli -d test *.txt
-Upload file 1234.txt successed: http://tmp-images.qiniudn.com/test/1234.txt
-Upload file 2345.txt successed: http://tmp-images.qiniudn.com/test/2345.txt
+http://tmp-images.qiniudn.com/test/1234.txt
+http://tmp-images.qiniudn.com/test/2345.txt
 
 
 $ ./qn_cli --help
@@ -44,5 +38,6 @@ Usage of ./qn_cli:
   -d="": Save dirname
   -md5=false: Auto named saved files use MD5 value
   -n="": Save name
+  -v=false: Verbose mode
   -w=false: Overwrite exists files
 ```
