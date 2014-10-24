@@ -13,6 +13,7 @@ import (
 	"path"
 	"path/filepath"
 	"strconv"
+	"sync"
 	"time"
 
 	"github.com/qiniu/api/conf"
@@ -125,30 +126,44 @@ func main() {
 		// 生成上传 token
 		a.uptoken = genToken(a.bucketName, a.overwrite, a.key)
 	}
+	// 定义任务组
+	var wg sync.WaitGroup
 
 	// 上传文件
 	for _, file := range a.fileSlice {
-		if a.autoMD5Name && a.key == "" {
-			a.key = autoMD5FileName(file)
-		} else if a.autoName && a.key == "" {
-			a.key = autoFileName(file)
-		}
-		if a.saveDir != "" {
-			a.key = path.Join(a.saveDir, a.key)
-		}
-		if a.overwrite {
-			a.uptoken = genToken(a.bucketName, a.overwrite, a.key)
-		}
+		// 增加一个任务
+		wg.Add(1)
+		// 使用 goroutine 异步执行上传任务
+		go func(file string) {
+			defer wg.Done() // 标记任务完成
+			key := a.key
+			uptoken := a.uptoken
 
-		// 上传文件
-		ret, err := uploadFile(file, a.key, a.uptoken)
-		if err != nil {
-			fmt.Printf("Upload file %s faied: %s\n", file, err)
-		} else {
-			fmt.Printf("Upload file %s successed: %s\n",
-				file,
-				a.bucketURL+ret.Key,
-			)
-		}
+			if a.autoMD5Name && key == "" {
+				key = autoMD5FileName(file)
+			} else if a.autoName && key == "" {
+				key = autoFileName(file)
+			}
+			if a.saveDir != "" {
+				key = path.Join(a.saveDir, key)
+			}
+			if a.overwrite {
+				uptoken = genToken(a.bucketName, a.overwrite, key)
+			}
+
+			// 上传文件
+			ret, err := uploadFile(file, key, uptoken)
+			if err != nil {
+				fmt.Printf("Upload file %s faied: %s\n", file, err)
+			} else {
+				fmt.Printf("Upload file %s successed: %s\n",
+					file,
+					a.bucketURL+ret.Key,
+				)
+			}
+		}(file)
 	}
+
+	// 等待所有任务完成
+	wg.Wait()
 }

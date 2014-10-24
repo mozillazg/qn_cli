@@ -24,8 +24,19 @@ $ export QINIU_SECRET_KEY="<QINIU_SECRET_KEY>"
 
 $ ./qn_cli *.txt
 Upload file 1234.txt successed: http://tmp-images.qiniudn.com/1234.txt
+Upload file 2345.txt successed: http://tmp-images.qiniudn.com/2345.txt
 $ ./qn_cli -n test/124.txt 1234.txt
 Upload file 1234.txt successed: http://tmp-images.qiniudn.com/test/124.txt
+$ ./qn_cli -w -d test *.txt
+Upload file 1234.txt successed: http://tmp-images.qiniudn.com/test/1234.txt
+Upload file 2345.txt successed: http://tmp-images.qiniudn.com/test/2345.txt
+$ ./qn_cli -w *.txt
+Upload file 1234.txt successed: http://tmp-images.qiniudn.com/1234.txt
+Upload file 2345.txt successed: http://tmp-images.qiniudn.com/2345.txt
+$ ./qn_cli -d test *.txt
+Upload file 1234.txt successed: http://tmp-images.qiniudn.com/test/1234.txt
+Upload file 2345.txt successed: http://tmp-images.qiniudn.com/test/2345.txt
+
 
 $ ./qn_cli --help
 Usage of ./qn_cli:
