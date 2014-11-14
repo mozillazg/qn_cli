@@ -3,7 +3,7 @@ install:
   - go get github.com/mozillazg/qn_cli
 
 script:
-  - qn_cli
+  - which qn_cli
 
 notifications:
   email:
