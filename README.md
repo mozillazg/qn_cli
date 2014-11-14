@@ -1,6 +1,8 @@
 qn\_cli
 ======
 
+[![Build Status](https://travis-ci.org/mozillazg/qn_cli.svg)](https://travis-ci.org/mozillazg/qn\_cli)
+
 Qiniu upload client by Go
 
 

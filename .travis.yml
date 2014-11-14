@@ -1,0 +1,11 @@
+language: go
+install:
+  - go get github.com/mozillazg/qn_cli
+
+script:
+  - qn_cli
+
+notifications:
+  email:
+    on_success: change
+    on_failure: always
