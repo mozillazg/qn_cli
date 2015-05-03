@@ -49,17 +49,18 @@ func uploadFile(localFile, key, uptoken string) (ret io.PutRet, err error) {
 }
 
 // 自动生成文件名
-func autoFileName(p string) string {
-	_, name := path.Split(p)
-	return name
+func autoFileName(p string) (string, string, string) {
+	dirname, name := path.Split(p)
+	ext := path.Ext(name)
+	return dirname, name, ext
 }
 func autoMD5FileName(p string) string {
-	oldName := autoFileName(p)
+	dirname, oldName, ext := autoFileName(p)
 	now := int(time.Now().Nanosecond())
 	hash := md5.Sum([]byte(
 		strconv.Itoa(now),
 	))
-	newName := hex.EncodeToString(hash[:]) + "_" + oldName
+	newName := dirname + oldName + "_" + hex.EncodeToString(hash[:]) + ext
 	return newName
 }
 
@@ -101,7 +102,24 @@ func parse_args() args {
 	for _, file := range files {
 		matches, err := filepath.Glob(file)
 		if err == nil {
-			fileSlice = append(fileSlice, matches...)
+
+			for _, path := range matches {
+				// 遍历目录
+				err := filepath.Walk(path, func(path string, info os.FileInfo, err error) error {
+					if err != nil {
+						log.Print(err)
+						return nil
+					}
+					if info.IsDir() {
+						return nil
+					}
+					fileSlice = append(fileSlice, path)
+					return nil
+				})
+				if err != nil {
+					log.Print(err)
+				}
+			}
 		}
 	}
 	if len(fileSlice) == 0 {
@@ -150,7 +168,7 @@ func main() {
 			if a.autoMD5Name && key == "" {
 				key = autoMD5FileName(file)
 			} else if a.autoName && key == "" {
-				key = autoFileName(file)
+				key = file
 			}
 			if a.saveDir != "" {
 				key = path.Join(a.saveDir, key)
