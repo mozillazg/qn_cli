@@ -114,6 +114,13 @@ func parse_args() args {
 	bucketURL := os.Getenv("QINIU_BUCKET_URL")
 	accessKey := os.Getenv("QINIU_ACCESS_KEY")
 	secretKey := os.Getenv("QINIU_SECRET_KEY")
+	if *verbose {
+		fmt.Printf("bucketName: %s\n", bucketName)
+		fmt.Printf("bucketURL: %s\n", bucketURL)
+		fmt.Printf("accessKey: %s\n", accessKey)
+		fmt.Printf("secretKey: %s\n", secretKey)
+	}
+
 	key := *saveName
 	fileSlice := []string{}
 
@@ -159,7 +166,7 @@ func parse_args() args {
 		os.Exit(1)
 	}
 
-	// 配置 accesskey, secretkey
+	// 配置 accessKey, secretKey
 	conf.ACCESS_KEY = accessKey
 	conf.SECRET_KEY = secretKey
 	fmt.Println(ignores)
@@ -183,6 +190,10 @@ func parse_args() args {
 
 func main() {
 	a := parse_args()
+	if a.verbose {
+		fmt.Println(a)
+	}
+
 	if !a.overwrite {
 		// 生成上传 token
 		a.uptoken = genToken(a.bucketName, a.overwrite, a.key)
