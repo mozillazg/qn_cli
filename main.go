@@ -9,7 +9,6 @@ import (
 	"encoding/hex"
 	"flag"
 	"fmt"
-	"io/ioutil"
 	"log"
 	"os"
 	"path"
@@ -22,6 +21,20 @@ import (
 	"github.com/qiniu/api/resumable/io"
 	"github.com/qiniu/api/rs"
 )
+
+var ignorePaths = []string{
+	".git", ".hg", ".svn", ".module-cache", ".bin",
+}
+
+type stringSlice []string
+
+func (s *stringSlice) String() string {
+	return fmt.Sprintf("%s", *s)
+}
+func (s *stringSlice) Set(value string) error {
+	*s = append(*s, value)
+	return nil
+}
 
 // 生成上传 token
 func genToken(bucket string, overwrite bool, key string) string {
@@ -83,13 +96,19 @@ func parse_args() args {
 	saveDir := flag.String("d", "", "Save dirname")
 	autoName := flag.Bool("a", true, "Auto named saved files")
 	autoMD5Name := flag.Bool("md5", false, "Auto named saved files use MD5 value")
-	overwrite := flag.Bool("w", false, "Overwrite exists files")
+	overwrite := flag.Bool("w", true, "Overwrite exists files")
 	verbose := flag.Bool("v", false, "Verbose mode")
+	var ignores stringSlice
+	flag.Var(&ignores, "i", "ignores")
+
+	// https://lawlessguy.wordpress.com/2013/07/23/filling-a-slice-using-command-line-flags-in-go-golang/
+	// ignore := flag.String("i", "", "ignore files or dirs")
+
 	flag.Parse()
 	files := flag.Args()
-	if !*verbose {
-		log.SetOutput(ioutil.Discard)
-	}
+	// if !*verbose {
+	// 	log.SetOutput(ioutil.Discard)
+	// }
 
 	bucketName := os.Getenv("QINIU_BUCKET_NAME")
 	bucketURL := os.Getenv("QINIU_BUCKET_URL")
@@ -110,9 +129,21 @@ func parse_args() args {
 						log.Print(err)
 						return nil
 					}
+
+					// ignore ignorePaths
+					for _, i := range ignorePaths {
+						p := filepath.Base(path)
+						if m, _ := filepath.Match(i, p); m {
+							if info.IsDir() {
+								return filepath.SkipDir
+							}
+							return nil
+						}
+					}
 					if info.IsDir() {
 						return nil
 					}
+
 					fileSlice = append(fileSlice, path)
 					return nil
 				})
@@ -131,6 +162,10 @@ func parse_args() args {
 	// 配置 accesskey, secretkey
 	conf.ACCESS_KEY = accessKey
 	conf.SECRET_KEY = secretKey
+	fmt.Println(ignores)
+	if len(ignores) != 0 {
+		ignorePaths = append(ignorePaths, ignores...)
+	}
 
 	return args{
 		bucketName:  bucketName,
@@ -181,17 +216,16 @@ func main() {
 			ret, err := uploadFile(file, key, uptoken)
 			if err != nil {
 				if a.verbose {
-					fmt.Printf("Upload file %s faied: %s\n", file, err)
+					fmt.Printf("%s: %s ✕\n", file, err)
+				} else {
+					fmt.Printf("%s ✕\n", file)
 				}
 			} else {
 				url := a.bucketURL + ret.Key
 				if a.verbose {
-					fmt.Printf("Upload file %s successed: %s\n",
-						file,
-						url,
-					)
+					fmt.Printf("%s: %s ✓\n", file, url)
 				} else {
-					fmt.Println(url)
+					fmt.Printf("%s\n", url)
 				}
 			}
 		}(file)
