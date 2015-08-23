@@ -71,6 +71,7 @@ func autoFileName(p string) (string, string, string) {
 	ext := path.Ext(name)
 	return dirname, name, ext
 }
+
 func autoMD5FileName(p string) string {
 	dirname, oldName, ext := autoFileName(p)
 	now := int(time.Now().Nanosecond())
@@ -79,6 +80,46 @@ func autoMD5FileName(p string) string {
 	))
 	newName := dirname + oldName + "_" + hex.EncodeToString(hash[:]) + ext
 	return newName
+}
+
+func walkFiles(files []string, ignorePaths []string) (fileSlice []string) {
+	for _, file := range files {
+		matches, err := filepath.Glob(file)
+		if err == nil {
+
+			for _, path := range matches {
+				// 遍历目录
+				err := filepath.Walk(path, func(path string, info os.FileInfo, err error) error {
+					if err != nil {
+						log.Print(err)
+						return nil
+					}
+
+					// ignore ignorePaths
+					for _, i := range ignorePaths {
+						p := filepath.Base(path)
+						if m, _ := filepath.Match(i, p); m {
+							if info.IsDir() {
+								return filepath.SkipDir
+							}
+							return nil
+						}
+					}
+					if info.IsDir() {
+						return nil
+					}
+
+					fileSlice = append(fileSlice, path)
+					return nil
+				})
+				if err != nil {
+					log.Print(err)
+				}
+			}
+		}
+	}
+
+	return
 }
 
 func finalURL(bucketURL, key string) (url string) {
@@ -123,44 +164,9 @@ func parseArgs() *args {
 	}
 
 	key := *saveName
-	fileSlice := []string{}
-
 	// 支持通配符
-	for _, file := range files {
-		matches, err := filepath.Glob(file)
-		if err == nil {
+	fileSlice := walkFiles(files, ignorePaths)
 
-			for _, path := range matches {
-				// 遍历目录
-				err := filepath.Walk(path, func(path string, info os.FileInfo, err error) error {
-					if err != nil {
-						log.Print(err)
-						return nil
-					}
-
-					// ignore ignorePaths
-					for _, i := range ignorePaths {
-						p := filepath.Base(path)
-						if m, _ := filepath.Match(i, p); m {
-							if info.IsDir() {
-								return filepath.SkipDir
-							}
-							return nil
-						}
-					}
-					if info.IsDir() {
-						return nil
-					}
-
-					fileSlice = append(fileSlice, path)
-					return nil
-				})
-				if err != nil {
-					log.Print(err)
-				}
-			}
-		}
-	}
 	if len(fileSlice) == 0 {
 		flag.PrintDefaults()
 		fmt.Println("need files: qn_cli FILE [FILE ...]")
