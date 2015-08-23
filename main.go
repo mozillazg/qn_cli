@@ -17,9 +17,9 @@ import (
 	"sync"
 	"time"
 
-	"github.com/qiniu/api/conf"
-	"github.com/qiniu/api/resumable/io"
-	"github.com/qiniu/api/rs"
+	"golang.org/x/net/context"
+	"qiniupkg.com/api.v7/kodo"
+	"qiniupkg.com/api.v7/kodocli"
 )
 
 var ignorePaths = []string{
@@ -37,27 +37,31 @@ func (s *stringSlice) Set(value string) error {
 }
 
 // 生成上传 token
-func genToken(bucket string, overwrite bool, key string) string {
-	policy := rs.PutPolicy{
-		Scope:      bucket,
-		ReturnBody: `{"bucket": $(bucket),"key": $(key)}`,
+func genUpToken(a *args, c *kodo.Client, key string) string {
+	policy := kodo.PutPolicy{
+		Scope: a.bucketName,
+		// ReturnBody: `{"bucket": $(bucket),"key": $(key)}`,
+		DetectMime: 1,
 	}
-	if overwrite {
-		policy.Scope = policy.Scope + ":" + key
+	if key != "" {
+		policy.SaveKey = key
+		if a.overwrite {
+			policy.Scope = policy.Scope + ":" + key
+			policy.InsertOnly = 0
+		}
 	}
-	return policy.Token(nil)
+	return c.MakeUptoken(&policy)
 }
 
 // 上传本地文件
-func uploadFile(localFile, key, uptoken string) (ret io.PutRet, err error) {
-	var extra = &io.PutExtra{}
-
+func uploadFile(
+	uploader kodocli.Uploader, ctx context.Context, localFile, key, uptoken string) (ret *kodocli.PutRet, err error) {
+	ret = &kodocli.PutRet{}
 	if key == "" {
-		err = io.PutFileWithoutKey(nil, &ret, uptoken, localFile, extra)
+		err = uploader.PutFileWithoutKey(ctx, ret, uptoken, localFile, nil)
 	} else {
-		err = io.PutFile(nil, &ret, uptoken, key, localFile, extra)
+		err = uploader.PutFile(ctx, ret, uptoken, key, localFile, nil)
 	}
-
 	return
 }
 
@@ -77,6 +81,10 @@ func autoMD5FileName(p string) string {
 	return newName
 }
 
+func finalURL(bucketURL, key string) (url string) {
+	return bucketURL + key
+}
+
 type args struct {
 	bucketName  string
 	bucketURL   string
@@ -86,11 +94,10 @@ type args struct {
 	autoMD5Name bool
 	overwrite   bool
 	saveDir     string
-	uptoken     string
 	verbose     bool
 }
 
-func parse_args() args {
+func parseArgs() *args {
 	// 保存名称
 	saveName := flag.String("n", "", "Save name")
 	saveDir := flag.String("d", "", "Save dirname")
@@ -101,14 +108,8 @@ func parse_args() args {
 	var ignores stringSlice
 	flag.Var(&ignores, "i", "ignores")
 
-	// https://lawlessguy.wordpress.com/2013/07/23/filling-a-slice-using-command-line-flags-in-go-golang/
-	// ignore := flag.String("i", "", "ignore files or dirs")
-
 	flag.Parse()
 	files := flag.Args()
-	// if !*verbose {
-	// 	log.SetOutput(ioutil.Discard)
-	// }
 
 	bucketName := os.Getenv("QINIU_BUCKET_NAME")
 	bucketURL := os.Getenv("QINIU_BUCKET_URL")
@@ -167,14 +168,12 @@ func parse_args() args {
 	}
 
 	// 配置 accessKey, secretKey
-	conf.ACCESS_KEY = accessKey
-	conf.SECRET_KEY = secretKey
-	fmt.Println(ignores)
+	kodo.SetMac(accessKey, secretKey)
 	if len(ignores) != 0 {
 		ignorePaths = append(ignorePaths, ignores...)
 	}
 
-	return args{
+	return &args{
 		bucketName:  bucketName,
 		bucketURL:   bucketURL,
 		fileSlice:   fileSlice,
@@ -183,21 +182,16 @@ func parse_args() args {
 		autoMD5Name: *autoMD5Name,
 		overwrite:   *overwrite,
 		saveDir:     *saveDir,
-		uptoken:     "",
 		verbose:     *verbose,
 	}
 }
 
 func main() {
-	a := parse_args()
+	a := parseArgs()
 	if a.verbose {
 		fmt.Println(a)
 	}
 
-	if !a.overwrite {
-		// 生成上传 token
-		a.uptoken = genToken(a.bucketName, a.overwrite, a.key)
-	}
 	// 定义任务组
 	var wg sync.WaitGroup
 
@@ -209,7 +203,10 @@ func main() {
 		go func(file string) {
 			defer wg.Done() // 标记任务完成
 			key := a.key
-			uptoken := a.uptoken
+			zone := 0
+			c := kodo.New(zone, nil)
+			uploader := kodocli.NewUploader(zone, nil)
+			ctx := context.Background()
 
 			if a.autoMD5Name && key == "" {
 				key = autoMD5FileName(file)
@@ -219,20 +216,19 @@ func main() {
 			if a.saveDir != "" {
 				key = path.Join(a.saveDir, key)
 			}
-			if a.overwrite {
-				uptoken = genToken(a.bucketName, a.overwrite, key)
-			}
+			token := genUpToken(a, c, key)
 
 			// 上传文件
-			ret, err := uploadFile(file, key, uptoken)
+			ret, err := uploadFile(uploader, ctx, file, key, token)
 			if err != nil {
 				if a.verbose {
 					fmt.Printf("%s: %s ✕\n", file, err)
 				} else {
 					fmt.Printf("%s ✕\n", file)
 				}
+				log.Fatal(err)
 			} else {
-				url := a.bucketURL + ret.Key
+				url := finalURL(a.bucketURL, ret.Key)
 				if a.verbose {
 					fmt.Printf("%s: %s ✓\n", file, url)
 				} else {
