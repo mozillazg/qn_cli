@@ -136,6 +136,7 @@ type args struct {
 	overwrite   bool
 	saveDir     string
 	verbose     bool
+	maxTasks    int
 }
 
 func parseArgs() *args {
@@ -146,6 +147,7 @@ func parseArgs() *args {
 	autoMD5Name := flag.Bool("md5", false, "Auto named saved files use MD5 value")
 	overwrite := flag.Bool("w", true, "Overwrite exists files")
 	verbose := flag.Bool("v", false, "Verbose mode")
+	maxTasks := flag.Int("max-tasks", 5, "Max upload tasks")
 	var ignores stringSlice
 	flag.Var(&ignores, "i", "ignores")
 
@@ -189,6 +191,7 @@ func parseArgs() *args {
 		overwrite:   *overwrite,
 		saveDir:     *saveDir,
 		verbose:     *verbose,
+		maxTasks:    *maxTasks,
 	}
 }
 
@@ -200,14 +203,24 @@ func main() {
 
 	// 定义任务组
 	var wg sync.WaitGroup
+	cts := 1
 
 	// 上传文件
 	for _, file := range a.fileSlice {
+		// 正在上传的任务数超出了限制，等待上传完成
+		if cts > a.maxTasks {
+			wg.Wait()
+		}
+
 		// 增加一个任务
 		wg.Add(1)
+		cts++
+
 		// 使用 goroutine 异步执行上传任务
 		go func(file string) {
-			defer wg.Done() // 标记任务完成
+			defer wg.Done()          // 标记任务完成
+			defer func() { cts-- }() // 正在进行的任务数减一
+
 			key := a.key
 			zone := 0
 			c := kodo.New(zone, nil)

@@ -10,7 +10,6 @@ Installation
 ------------
 
 ```
-$ go get -u github.com/qiniu/api
 $ go get -u github.com/mozillazg/qn_cli
 ```
 
@@ -40,8 +39,10 @@ $ qn_cli --help
 Usage of qn_cli:
   -a=true: Auto named saved files
   -d="": Save dirname
+  -i=[]: ignores
+  -max-tasks=5: Max upload tasks
   -md5=false: Auto named saved files use MD5 value
   -n="": Save name
   -v=false: Verbose mode
-  -w=false: Overwrite exists files
+  -w=true: Overwrite exists files
 ```

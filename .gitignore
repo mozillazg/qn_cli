@@ -24,3 +24,9 @@ _testmain.go
 *.prof
 # qn_cli
 *.swp
+*~
+*.gz
+qn_cli
+build/
+*.txt
+TODO
