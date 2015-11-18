@@ -22,6 +22,8 @@ import (
 	"qiniupkg.com/api.v7/kodocli"
 )
 
+const Version string = "0.4.0"
+
 var ignorePaths = []string{
 	".git", ".hg", ".svn", ".module-cache", ".bin",
 }
@@ -147,11 +149,17 @@ func parseArgs() *args {
 	autoMD5Name := flag.Bool("md5", false, "Auto named saved files use MD5 value")
 	overwrite := flag.Bool("w", true, "Overwrite exists files")
 	verbose := flag.Bool("v", false, "Verbose mode")
+	version := flag.Bool("V", false, "Version info")
 	maxTasks := flag.Int("max-tasks", 5, "Max upload tasks")
 	var ignores stringSlice
 	flag.Var(&ignores, "i", "ignores")
 
 	flag.Parse()
+	if *version {
+		fmt.Println("qn_cli " + Version)
+		os.Exit(0)
+	}
+
 	files := flag.Args()
 
 	bucketName := os.Getenv("QINIU_BUCKET_NAME")
