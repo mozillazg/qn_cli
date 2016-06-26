@@ -34,8 +34,8 @@ $ qn_cli -d test *.txt
 http://tmp-images.qiniudn.com/test/1234.txt
 http://tmp-images.qiniudn.com/test/2345.txt
 $ qn_cli -d test http://aiohttp.readthedocs.io/en/stable/_static/aiohttp-icon-128x128.png LICENSE
-https://dn-tmp.qbox.me/test/LICENSE
-https://dn-tmp.qbox.me/test/aiohttp-icon-128x128.png
+http://tmp-images.qiniudn.com/test/LICENSE
+http://tmp-images.qiniudn.com/test/aiohttp-icon-128x128.png
 
 
 $ qn_cli --help
