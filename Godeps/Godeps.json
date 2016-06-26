@@ -1,0 +1,63 @@
+{
+	"ImportPath": "github.com/mozillazg/qn_cli",
+	"GoVersion": "go1.6",
+	"GodepVersion": "v74",
+	"Deps": [
+		{
+			"ImportPath": "golang.org/x/net/context",
+			"Rev": "c4c3ea71919de159c9e246d7be66deb7f0a39a58"
+		},
+		{
+			"ImportPath": "qiniupkg.com/api.v7/auth/qbox",
+			"Comment": "v7.0.5-3-g2244dcb",
+			"Rev": "2244dcb77d05ea48beceb4635bcdd099b05762bd"
+		},
+		{
+			"ImportPath": "qiniupkg.com/api.v7/conf",
+			"Comment": "v7.0.5-3-g2244dcb",
+			"Rev": "2244dcb77d05ea48beceb4635bcdd099b05762bd"
+		},
+		{
+			"ImportPath": "qiniupkg.com/api.v7/kodo",
+			"Comment": "v7.0.5-3-g2244dcb",
+			"Rev": "2244dcb77d05ea48beceb4635bcdd099b05762bd"
+		},
+		{
+			"ImportPath": "qiniupkg.com/api.v7/kodocli",
+			"Comment": "v7.0.5-3-g2244dcb",
+			"Rev": "2244dcb77d05ea48beceb4635bcdd099b05762bd"
+		},
+		{
+			"ImportPath": "qiniupkg.com/x/bytes.v7",
+			"Rev": "f512abcf45ab4e2ba0fd4784c57b53d495997d66"
+		},
+		{
+			"ImportPath": "qiniupkg.com/x/bytes.v7/seekable",
+			"Rev": "f512abcf45ab4e2ba0fd4784c57b53d495997d66"
+		},
+		{
+			"ImportPath": "qiniupkg.com/x/ctype.v7",
+			"Rev": "f512abcf45ab4e2ba0fd4784c57b53d495997d66"
+		},
+		{
+			"ImportPath": "qiniupkg.com/x/log.v7",
+			"Rev": "f512abcf45ab4e2ba0fd4784c57b53d495997d66"
+		},
+		{
+			"ImportPath": "qiniupkg.com/x/reqid.v7",
+			"Rev": "f512abcf45ab4e2ba0fd4784c57b53d495997d66"
+		},
+		{
+			"ImportPath": "qiniupkg.com/x/rpc.v7",
+			"Rev": "f512abcf45ab4e2ba0fd4784c57b53d495997d66"
+		},
+		{
+			"ImportPath": "qiniupkg.com/x/url.v7",
+			"Rev": "f512abcf45ab4e2ba0fd4784c57b53d495997d66"
+		},
+		{
+			"ImportPath": "qiniupkg.com/x/xlog.v7",
+			"Rev": "f512abcf45ab4e2ba0fd4784c57b53d495997d66"
+		}
+	]
+}
