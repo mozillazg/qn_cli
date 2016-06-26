@@ -23,7 +23,9 @@ import (
 	"qiniupkg.com/api.v7/kodocli"
 )
 
-const Version string = "0.4.0"
+func Version() (v string) {
+	return "0.4.1"
+}
 
 var ignorePaths = []string{
 	".git", ".hg", ".svn", ".module-cache", ".bin",
@@ -159,7 +161,7 @@ func parseArgs() *args {
 
 	flag.Parse()
 	if *version {
-		fmt.Println("qn_cli " + Version)
+		fmt.Println("qn_cli " + Version())
 		os.Exit(0)
 	}
 
