@@ -9,12 +9,16 @@ import (
 	"encoding/hex"
 	"flag"
 	"fmt"
+	"io"
+	"io/ioutil"
 	"log"
+	"net/http"
 	url2 "net/url"
 	"os"
 	"path"
 	"path/filepath"
 	"strconv"
+	"strings"
 	"sync"
 	"time"
 
@@ -30,6 +34,7 @@ func Version() (v string) {
 var ignorePaths = []string{
 	".git", ".hg", ".svn", ".module-cache", ".bin",
 }
+var tempDir = ""
 
 type stringSlice []string
 
@@ -74,6 +79,9 @@ func uploadFile(
 func autoFileName(p string) (string, string, string) {
 	dirname, name := path.Split(p)
 	ext := path.Ext(name)
+	if tempDir != "" && dirname == tempDir {
+		dirname = ""
+	}
 	return dirname, name, ext
 }
 
@@ -89,7 +97,16 @@ func autoMD5FileName(p string) string {
 
 func walkFiles(files []string, ignorePaths []string) (fileSlice []string) {
 	for _, file := range files {
+		if strings.HasPrefix(file, "http://") || strings.HasPrefix(file, "https://") {
+			if pathx, err := downloadFile(file); err == nil {
+				file = pathx
+			} else {
+				continue
+			}
+		}
+
 		matches, err := filepath.Glob(file)
+		_ = "breakpoint"
 		if err == nil {
 
 			for _, path := range matches {
@@ -130,6 +147,37 @@ func walkFiles(files []string, ignorePaths []string) (fileSlice []string) {
 func finalURL(bucketURL, key string) (url string) {
 	u, _ := url2.Parse(bucketURL + key)
 	url = u.String()
+	return
+}
+
+func downloadFile(url string) (pathx string, err error) {
+	defer func() {
+		if err != nil {
+			log.Fatal(err)
+		}
+	}()
+
+	c := &http.Client{}
+	resp, err := c.Get(url)
+	if err != nil {
+		return
+	}
+	defer resp.Body.Close()
+	dir, err := ioutil.TempDir("", "qn_cli")
+	tempDir = dir
+	if err != nil {
+		return
+	}
+
+	u2, _ := url2.Parse(url)
+	name := filepath.Base(u2.Path)
+	pathx = filepath.Join(dir, name)
+	file, err := os.Create(pathx)
+	if err != nil {
+		return
+	}
+	defer file.Close()
+	io.Copy(file, resp.Body)
 	return
 }
 
@@ -243,7 +291,11 @@ func main() {
 			if a.autoMD5Name && key == "" {
 				key = autoMD5FileName(file)
 			} else if a.autoName && key == "" {
-				key = file
+				if tempDir != "" && strings.HasPrefix(file, tempDir) {
+					key = strings.Split(file, tempDir)[1]
+				} else {
+					key = file
+				}
 			}
 			if a.saveDir != "" {
 				key = path.Join(a.saveDir, key)
