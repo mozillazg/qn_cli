@@ -10,6 +10,7 @@ import (
 	"flag"
 	"fmt"
 	"log"
+	url2 "net/url"
 	"os"
 	"path"
 	"path/filepath"
@@ -125,7 +126,9 @@ func walkFiles(files []string, ignorePaths []string) (fileSlice []string) {
 }
 
 func finalURL(bucketURL, key string) (url string) {
-	return bucketURL + key
+	u, _ := url2.Parse(bucketURL + key)
+	url = u.String()
+	return
 }
 
 type args struct {
